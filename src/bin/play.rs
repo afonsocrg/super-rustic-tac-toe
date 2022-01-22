@@ -1,14 +1,12 @@
 use std::io::{self, Write};
 
-mod sttt;
-
 fn main() {
     println!("Welcome to Super Tic Tac Toe!");
 
     let mut game = sttt::STTT::new();
 
     loop {
-        println!("{}", game);
+        println!("{}", game.board());
 
         // loop until valid play
         loop {
@@ -31,12 +29,12 @@ fn main() {
             match game.play(game.player(), square) {
                 Ok(status) => match status {
                     sttt::Status::Winner(p) => {
-                        println!("{}", game);
+                        println!("{}", game.board());
                         println!("{} wins!", p);
                         return;
                     },
                     sttt::Status::Tie => {
-                        println!("{}", game);
+                        println!("{}", game.board());
                         println!("Game ended in a tie");
                         return;
                     },

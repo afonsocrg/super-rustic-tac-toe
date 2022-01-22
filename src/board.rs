@@ -1,116 +1,59 @@
-use std::collections::HashSet;
 use std::fmt;
 
-use super::status::Status;
-use super::player::Player;
+use super::Player;
 
-pub struct STTT {
-    player: Player,
-    board: [[Option<Player>;9]; 9],
+#[derive(Copy, Clone)]
+pub struct Board {
+    board: [[Option<Player>;9];9],
     metaboard: [Option<Player>;9],
-    valid_boards: HashSet<usize>,
 }
 
-// Public interface
-impl STTT {
-    pub fn new() -> STTT {
-        let mut valid_boards = HashSet::new();
-        // in the beginning, every board is valid!
-        for i in 0..9 {
-            valid_boards.insert(i);
-        }
-        STTT {
-            player: Player::X,
+impl Board {
+    pub fn new() -> Board {
+
+        Board {
             board: [[None; 9]; 9],
             metaboard: [None; 9],
-            valid_boards,
         }
     }
 
-    pub fn player(&self) -> Player { self.player }
+    pub fn metaboard(&self) -> [Option<Player>; 9] {
+        return self.metaboard;
+    }
 
-    pub fn play(&mut self, player: Player, position: u32) -> Result<Status, &str> {
-        // Step 1: Check if valid play
-        if player != self.player {
-            return Err("It's not your turn!");
-        }
-
-        // no need to compare with 0, since it is unsigned
-        if position >= 81 {
-            return Err("Square out of limits");
-        }
-        let position = position as usize;
-        let board_idx = position / 9;
-        let tile_idx = position % 9;
-
-        if !self.valid_boards.contains(&board_idx) {
-            return Err("You cannot play in that board!");
+    pub fn play(&mut self, board_idx: usize, tile_idx: usize, player: Player) -> Result<(), &'static str> {
+        if board_idx >= 9 || tile_idx >= 9 {
+            return Err("Position out of board");
         }
 
         if self.board[board_idx][tile_idx].is_some() {
             return Err("That square is not empty");
         }
 
-        // Step 2: Play move and check winner
-        self.board[board_idx][tile_idx] = Some(self.player);
+        self.board[board_idx][tile_idx] = Some(player);
 
-        if let Some(board_winner) = STTT::check_winner(&self.board[board_idx]) {
+        if let Some(board_winner) = Board::check_winner(&self.board[board_idx]) {
             assert!(board_winner == player);
             println!("{} wins board {}!!", board_winner, board_idx);
 
             self.metaboard[board_idx] = Some(player);
-
-            if let Some(winner) = STTT::check_winner(&self.metaboard) {
-                assert!(winner == player);
-                return Ok(Status::Winner(winner));
-            }
         }
 
-        // Step 3: Prepare next move
-        self.valid_boards.clear();
-        let next_board = position % 9;
-        if self.is_open(next_board) {
-            self.valid_boards.insert(next_board);
-        } else {
-            for board in 0..9 {
-                if self.is_open(board) {
-                    self.valid_boards.insert(board);
-                }
-            }
-        }
-
-        println!("Valid boards: {:?}", self.valid_boards);
-
-        if self.valid_boards.is_empty() {
-            return Ok(Status::Tie);
-        }
-        
-        self.player = self.next_player();
-        
-        Ok(Status::InProgress)
+        Ok(())
     }
 
-}
-
-impl STTT {
-    fn next_player(&self) -> Player {
-        match self.player {
-            Player::X => Player::O,
-            Player::O => Player::X,
-        }
-    }
-
-    fn is_open(&self, board_idx: usize) -> bool {
+    pub fn is_open(&self, board_idx: usize) -> bool {
         assert!(board_idx < 9);
 
+        // nobody has won this board
         self.metaboard[board_idx].is_none() &&
+        // still has empty squares
         self.board[board_idx].iter()
             .filter(|x| x.is_none())
             .count() > 0
     }
 
-
-    fn check_winner(board: &[Option<Player>;9]) -> Option<Player> {
+    pub fn check_winner(board: &[Option<Player>;9]) -> Option<Player> {
         // Check rows
         for row in 0..3 {
             let row_base = row * 3;
@@ -142,8 +85,7 @@ impl STTT {
     }
 }
 
-
-impl fmt::Display for STTT {
+impl fmt::Display for Board {
     /*
      *                 |               |
      *     0 | 1 | 2   |   9 | 10| 11  |   18| 19| 20
