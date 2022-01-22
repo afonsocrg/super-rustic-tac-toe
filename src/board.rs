@@ -3,6 +3,94 @@ use std::fmt;
 use super::Player;
 
 #[derive(Copy, Clone)]
+/// Represents a valid position in the board
+pub struct Position {
+    board_idx: usize,
+    tile_idx: usize,
+}
+
+impl Position {
+    /// Creates a valid position from an absolute index in the board.
+    ///
+    /// The absolute numeration is as follows:
+    /// ```text
+    ///                |               |
+    ///    0 | 1 | 2   |   9 | 10| 11  |   18| 19| 20
+    ///   ---+---+---  |  ---+---+---  |  ---+---+---
+    ///    3 | 4 | 5   |   12| 13| 14  |   21| 22| 23
+    ///   ---+---+---  |  ---+---+---  |  ---+---+---
+    ///    6 | 7 | 8   |   15| 16| 17  |   24| 25| 26
+    ///                |               |
+    /// ---------------+---------------+---------------
+    ///                |               |
+    ///    27| 28| 29  |   36| 37| 38  |   45| 46| 47
+    ///   ---+---+---  |  ---+---+---  |  ---+---+---
+    ///    30| 31| 32  |   39| 40| 41  |   48| 49| 50
+    ///   ---+---+---  |  ---+---+---  |  ---+---+---
+    ///    33| 34| 35  |   42| 43| 44  |   51| 52| 53
+    ///                |               |
+    /// ---------------+---------------+---------------
+    ///                |               |
+    ///    54| 55| 56  |   63| 64| 65  |   72| 73| 74
+    ///   ---+---+---  |  ---+---+---  |  ---+---+---
+    ///    57| 58| 59  |   66| 67| 68  |   75| 76| 77
+    ///   ---+---+---  |  ---+---+---  |  ---+---+---
+    ///    60| 61| 62  |   69| 70| 71  |   78| 79| 80
+    ///                |               |
+    /// ```
+    ///
+    /// # Error
+    ///
+    /// If the given absolute position is out of range (smaller than 0 or greater than 80),
+    /// this method returns an error
+    ///
+    /// # Examples
+    /// ```
+    /// use sttt::Position;
+    ///
+    /// let pos = Position::from_absolute(42).unwrap();
+    /// ```
+    pub fn from_absolute(pos: usize) -> Result<Position, &'static str> {
+        if pos >= 81 {
+            return Err("Position outside of board");
+        }
+
+        Ok(Position {
+            board_idx: pos / 9,
+            tile_idx:  pos % 9,
+        })
+    }
+
+    /// Returns the index of the small board in the metaboard that corresponds
+    /// to this position
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sttt::Position;
+    ///
+    /// let pos = Position::from_absolute(42).unwrap();
+    /// assert_eq!(pos.board_idx(), 4);
+    /// ```
+    pub fn board_idx(&self) -> usize { self.board_idx }
+
+    /// Returns the index of the tile in the small board corresponding to the position
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sttt::Position;
+    ///
+    /// let pos = Position::from_absolute(42).unwrap();
+    /// assert_eq!(pos.tile_idx(), 6);
+    /// ```
+    pub fn tile_idx(&self) -> usize { self.tile_idx }
+}
+
+#[derive(Copy, Clone)]
+/// Represents the Super Tic-Tac-Toe board.
+/// It has 9 Tic-Tac-Toe boards (also called small boards) in a
+/// 3x3 grid (also called metaboard).
 pub struct Board {
     board: [[Option<Player>;9];9],
     metaboard: [Option<Player>;9],
@@ -56,26 +144,28 @@ impl Board {
     /// # Examples
     /// 
     /// ```
-    /// use sttt::{Board,Player};
+    /// use sttt::{Board,Player, Position};
+    ///
+    /// let p1 = Position::from_absolute(0).unwrap();
+    /// let p2 = Position::from_absolute(1).unwrap();
+    /// let p3 = Position::from_absolute(2).unwrap();
     ///
     /// let mut board = Board::new();
-    /// board.play(0, 0, Player::X);
-    /// board.play(0, 1, Player::X);
-    /// board.play(0, 2, Player::X);
+    /// board.play(Player::X, p1);
+    /// board.play(Player::X, p2);
+    /// board.play(Player::X, p3);
     /// assert_eq!(board.metaboard(),  [Some(Player::X), None, None, 
     ///                                     None, None, None, 
     ///                                     None, None, None]);
     /// ```
     pub fn play(
         &mut self,
-        board_idx: usize,
-        tile_idx: usize,
-        player: Player
+        player: Player,
+        position: Position,
     ) -> Result<(), &'static str> {
 
-        if board_idx >= 9 || tile_idx >= 9 {
-            return Err("Position out of board");
-        }
+        let board_idx = position.board_idx();
+        let tile_idx = position.tile_idx();
 
         if self.board[board_idx][tile_idx].is_some() {
             return Err("That square is not empty");
@@ -100,13 +190,17 @@ impl Board {
     /// # Examples
     /// 
     /// ```
-    /// use sttt::{Board, Player};
+    /// use sttt::{Board, Player, Position};
+    ///
+    /// let p1 = Position::from_absolute(0).unwrap();
+    /// let p2 = Position::from_absolute(1).unwrap();
+    /// let p3 = Position::from_absolute(2).unwrap();
     ///
     /// let mut board = Board::new();
-    /// board.play(0, 0, Player::X);
-    /// board.play(0, 1, Player::X);
+    /// board.play(Player::X, p1);
+    /// board.play(Player::X, p2);
     /// assert_eq!(board.is_open(0),  true);
-    /// board.play(0, 2, Player::X);
+    /// board.play(Player::X, p3);
     /// assert_eq!(board.is_open(0),  false);
     /// ```
     pub fn is_open(&self, board_idx: usize) -> bool {

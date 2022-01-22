@@ -3,7 +3,7 @@ use std::fmt;
 
 mod board;
 
-pub use board::Board;
+pub use board::{Board,Position};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 /// Represents the possible players in a 
@@ -66,11 +66,13 @@ impl STTT {
     /// # Examples
     ///
     /// ```
-    /// use sttt::{STTT, Player};
+    /// use sttt::{STTT, Player, Position};
+    ///
+    /// let p1 = Position::from_absolute(0).unwrap();
     ///
     /// let mut game = STTT::new();
     /// assert_eq!(game.player(), Player::X);
-    /// game.play(Player::X, 0);
+    /// game.play(Player::X, p1);
     /// assert_eq!(game.player(), Player::O);
     /// ```
     pub fn player(&self) -> Player { self.player }
@@ -92,45 +94,45 @@ impl STTT {
     /// # Examples
     ///
     /// ```
-    /// use sttt::{STTT,Player};
+    /// use sttt::{STTT,Player, Position};
+    ///
+    /// let p1 = Position::from_absolute(0).unwrap();
+    /// let p2 = Position::from_absolute(1).unwrap();
+    /// let p3 = Position::from_absolute(9).unwrap();
     ///
     /// let mut game = STTT::new();
-    /// game.play(Player::X, 0).expect("Play");
-    /// game.play(Player::O, 1).expect("Play");
-    /// game.play(Player::X, 9).expect("Play");
+    /// game.play(Player::X, p1).unwrap();
+    /// game.play(Player::O, p2).unwrap();
+    /// game.play(Player::X, p3).unwrap();
     /// ```
-    pub fn play(&mut self, player: Player, position: u32) -> Result<Status, &str> {
+    pub fn play(&mut self, player: Player, position: Position) -> Result<Status, &str> {
         // Step 1: Check if valid play
         if player != self.player {
             return Err("It's not your turn!");
         }
-
-        if position >= 81 {
-            return Err("Square out of limits");
-        }
-        let position = position as usize;
-        let board_idx = position / 9;
-        let tile_idx = position % 9;
-
-        if !self.valid_boards.contains(&board_idx) {
+        if !self.valid_boards.contains(&position.board_idx()) {
             return Err("You cannot play in that board!");
         }
 
-        if let Err(msg) = self.board.play(board_idx, tile_idx, self.player) {
+        // Step 2: Play the given move
+        if let Err(msg) = self.board.play(self.player, position) {
             return Err(msg);
         }
 
+        // Step 3: Check winner
         if let Some(winner) = Board::check_winner(&self.board.metaboard()) {
             assert!(winner == player);
             return Ok(Status::Winner(winner));
         }
 
-        // Step 3: Prepare next move
+        // Step 4: Prepare next move
         self.valid_boards.clear();
-        let next_board = position % 9;
+        let next_board = position.tile_idx();
         if self.board.is_open(next_board) {
+            // Play in corresponding board if open
             self.valid_boards.insert(next_board);
         } else {
+            // Otherwise play in every available board
             for board in 0..9 {
                 if self.board.is_open(board) {
                     self.valid_boards.insert(board);

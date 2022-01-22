@@ -1,9 +1,11 @@
 use std::io::{self, Write};
 
+use sttt::{STTT, Position};
+
 fn main() {
     println!("Welcome to Super Tic Tac Toe!");
 
-    let mut game = sttt::STTT::new();
+    let mut game = STTT::new();
 
     loop {
         println!("{}", game.board());
@@ -18,7 +20,7 @@ fn main() {
                 .read_line(&mut square)
                 .expect("Failed to read from stdin");
 
-            let square: u32 = match square.trim().parse() {
+            let square: usize = match square.trim().parse() {
                 Ok(val) => val,
                 Err(_) => {
                     println!("Please type a number!");
@@ -26,7 +28,15 @@ fn main() {
                 }
             };
 
-            match game.play(game.player(), square) {
+            let pos = match Position::from_absolute(square) {
+                Ok(val) => val,
+                Err(msg) => {
+                    println!("{}", msg);
+                    continue;
+                }
+            };
+
+            match game.play(game.player(), pos) {
                 Ok(status) => match status {
                     sttt::Status::Winner(p) => {
                         println!("{}", game.board());
