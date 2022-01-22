@@ -9,6 +9,15 @@ pub struct Board {
 }
 
 impl Board {
+    /// Creates an empty `Board`.
+    ///
+    /// # Examples
+    /// 
+    /// ```
+    /// use sttt::Board;
+    ///
+    /// let mut board = Board::new();
+    /// ```
     pub fn new() -> Board {
 
         Board {
@@ -17,11 +26,53 @@ impl Board {
         }
     }
 
+    /// Returns a copy of the metaboard
+    ///
+    /// # Examples
+    /// 
+    /// ```
+    /// use sttt::{Board, Player};
+    ///
+    /// let mut board = Board::new();
+    /// let metaboard = board.metaboard();
+    /// ```
     pub fn metaboard(&self) -> [Option<Player>; 9] {
         return self.metaboard;
     }
 
-    pub fn play(&mut self, board_idx: usize, tile_idx: usize, player: Player) -> Result<(), &'static str> {
+    /// Inserts a move from a given player in the board.
+    /// 
+    /// If that player wins the small board, the metaboard will 
+    /// have that player in the position corresponding to the closed board
+    ///
+    /// # Errors
+    ///
+    /// If board_idx or tile_idx are greater or equal than `9`, that move is invalid
+    /// and an error is returned.
+    ///
+    /// If the given position corresponds to an already played tile, 
+    /// an error is returned as well.
+    ///
+    /// # Examples
+    /// 
+    /// ```
+    /// use sttt::{Board,Player};
+    ///
+    /// let mut board = Board::new();
+    /// board.play(0, 0, Player::X);
+    /// board.play(0, 1, Player::X);
+    /// board.play(0, 2, Player::X);
+    /// assert_eq!(board.metaboard(),  [Some(Player::X), None, None, 
+    ///                                     None, None, None, 
+    ///                                     None, None, None]);
+    /// ```
+    pub fn play(
+        &mut self,
+        board_idx: usize,
+        tile_idx: usize,
+        player: Player
+    ) -> Result<(), &'static str> {
+
         if board_idx >= 9 || tile_idx >= 9 {
             return Err("Position out of board");
         }
@@ -42,6 +93,22 @@ impl Board {
         Ok(())
     }
 
+    /// Returns `true` if there are still valid plays in the given board.
+    /// If the board already has a winner or has every tile played, then
+    /// this function returns false.
+    ///
+    /// # Examples
+    /// 
+    /// ```
+    /// use sttt::{Board, Player};
+    ///
+    /// let mut board = Board::new();
+    /// board.play(0, 0, Player::X);
+    /// board.play(0, 1, Player::X);
+    /// assert_eq!(board.is_open(0),  true);
+    /// board.play(0, 2, Player::X);
+    /// assert_eq!(board.is_open(0),  false);
+    /// ```
     pub fn is_open(&self, board_idx: usize) -> bool {
         assert!(board_idx < 9);
 
@@ -53,6 +120,20 @@ impl Board {
             .count() > 0
     }
 
+    /// Tic-Tac-Toe logic to check if a 3x3 board has a winner
+    ///
+    /// # Examples
+    /// 
+    /// ```
+    /// use sttt::{Board, Player};
+    ///
+    /// let mut ttt: [Option<Player>; 9] = [None; 9];
+    /// ttt[0] = Some(Player::X);
+    /// ttt[1] = Some(Player::X);
+    /// assert_eq!(Board::check_winner(&ttt),  None);
+    /// ttt[2] = Some(Player::X);
+    /// assert_eq!(Board::check_winner(&ttt),  Some(Player::X));
+    /// ```
     pub fn check_winner(board: &[Option<Player>;9]) -> Option<Player> {
         // Check rows
         for row in 0..3 {

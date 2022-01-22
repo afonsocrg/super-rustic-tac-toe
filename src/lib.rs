@@ -5,7 +5,9 @@ mod board;
 
 pub use board::Board;
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+/// Represents the possible players in a 
+/// Super Tic-Tac-Toe game: `X` and `O`.
 pub enum Player { X, O }
 
 impl fmt::Display for Player {
@@ -17,9 +19,13 @@ impl fmt::Display for Player {
     }
 }
 
+/// Represents the possible statuses of a game.
 pub enum Status {
+    /// Represents that `Player` has won the game.
     Winner(Player),
+    /// Represents that the game ended in a Tie.
     Tie,
+    /// Represents that the game is still in progress.
     InProgress,
 }
 
@@ -30,8 +36,18 @@ pub struct STTT {
     valid_boards: HashSet<usize>,
 }
 
-// Public interface
 impl STTT {
+    /// Creates a new Super Tic-Tac-Toe game, with an empty board.
+    /// The first player is `Player::X` and `X` can play in any big board,
+    /// in the first move.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sttt::STTT;
+    ///
+    /// let mut game = STTT::new();
+    /// ```
     pub fn new() -> STTT {
         let mut valid_boards = HashSet::new();
         // in the beginning, every board is valid!
@@ -45,9 +61,44 @@ impl STTT {
         }
     }
 
+    /// Returns the next player to play
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sttt::{STTT, Player};
+    ///
+    /// let mut game = STTT::new();
+    /// assert_eq!(game.player(), Player::X);
+    /// game.play(Player::X, 0);
+    /// assert_eq!(game.player(), Player::O);
+    /// ```
     pub fn player(&self) -> Player { self.player }
+
+    /// Returns a copy of the game board
     pub fn board(&self) -> Board { self.board }
 
+    /// Makes player play at a given position.
+    ///
+    /// Returns the game `Status` resulting from this play in case of success.
+    ///
+    /// The next player to make a move swaps at each successful call to this function.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if a player plays in the other's turn,
+    /// if the given position is out of bounds, or if the play is invalid in the board.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sttt::{STTT,Player};
+    ///
+    /// let mut game = STTT::new();
+    /// game.play(Player::X, 0).expect("Play");
+    /// game.play(Player::O, 1).expect("Play");
+    /// game.play(Player::X, 9).expect("Play");
+    /// ```
     pub fn play(&mut self, player: Player, position: u32) -> Result<Status, &str> {
         // Step 1: Check if valid play
         if player != self.player {
