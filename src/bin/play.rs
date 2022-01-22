@@ -1,3 +1,7 @@
+//! # Play
+//!
+//! A small binary to play Super Tic-Tac-Toe!
+
 use std::io::{self, Write};
 
 use sttt::{STTT, Position};

@@ -1,3 +1,7 @@
+//! # STTT
+//!
+//! A library crate that contains the logic of Super Tic-Tac-Toe!
+
 use std::collections::HashSet;
 use std::fmt;
 
